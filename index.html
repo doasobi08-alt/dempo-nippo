@@ -207,10 +207,10 @@ $("ak").oninput=function(){ls("dempo-ak-"+pv(),this.value.trim())};
 $("md").oninput=function(){ls("dempo-md-"+pv(),this.value.trim())};
 function shrink(file){
 return createImageBitmap(file).then(function(bm){
-var k=Math.min(1,2000/Math.max(bm.width,bm.height)),cv=document.createElement("canvas");
+var k=Math.min(1,1600/Math.max(bm.width,bm.height)),cv=document.createElement("canvas");
 cv.width=Math.round(bm.width*k);cv.height=Math.round(bm.height*k);
 cv.getContext("2d").drawImage(bm,0,0,cv.width,cv.height);
-return cv.toDataURL("image/jpeg",0.9).split(",")[1]})}
+return cv.toDataURL("image/jpeg",0.85).split(",")[1]})}
 var PROMPT='添付画像は、電報配達の「集計表」を撮影した写真です。表は上段（日付1〜15）と下段（日付16〜31と、右端の合計列）に分かれています。画像が複数枚ある場合は、同じ集計表の別の部分です。'
 +'「電報配達通数」の「通数」行と「再配達（再掲）」行の数字を、日付の順に読み取ってください。次のJSONだけを返してください（説明文やコードブロックは不要）。\n'
 +'{"year":西暦年の整数またはnull,"month":月の整数またはnull,"tsu":[1日から末日までの通数の整数],"saihai":[1日から末日までの再配達の整数],"total_tsu":合計列の通数の整数またはnull,"total_saihai":合計列の再配達の整数またはnull,"note":"読み取りにくかった箇所があれば日本語で。なければ空文字"}\n'
@@ -223,15 +223,17 @@ function fail(r,j){var e=new Error((j&&j.error&&j.error.message)||"error");e.sta
 function pick(txt){var m=(txt||"").match(/\{[\s\S]*\}/);if(!m)throw new Error("parse");return JSON.parse(m[0])}
 if(pv()==="gemini"){
 var parts=imgs.map(function(d){return {inline_data:{mime_type:"image/jpeg",data:d}}});parts.push({text:PROMPT});
-function gem(think){
+function gem(tc){
 var gc={temperature:0,responseMimeType:"application/json"};
-if(think&&/^gemini-3/.test(model))gc.thinkingConfig={thinkingLevel:"low"};
+if(tc)gc.thinkingConfig=tc;
 return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent",{method:"POST",signal:sig,
 headers:{"content-type":"application/json","x-goog-api-key":key},
 body:JSON.stringify({contents:[{parts:parts}],generationConfig:gc})})
 .then(function(r){return r.json().then(function(j){if(!r.ok)fail(r,j);
 var c=j.candidates&&j.candidates[0];var t=c&&c.content&&c.content.parts?c.content.parts.map(function(p){return p.text||""}).join(""):"";return pick(t)})})}
-return gem(true).catch(function(e){if(e&&e.status===400&&/think/i.test(e.message))return gem(false);throw e})}
+var tries=/^gemini-3/.test(model)?[{thinkingLevel:"minimal"},{thinkingLevel:"low"},null]:/^gemini-2\.5/.test(model)?[{thinkingBudget:0},null]:[null];
+function go(i){return gem(tries[i]).catch(function(e){if(e&&e.status===400&&/think/i.test(e.message)&&i+1<tries.length)return go(i+1);throw e})}
+return go(0)}
 var content=imgs.map(function(d){return {type:"image",source:{type:"base64",media_type:"image/jpeg",data:d}}});
 content.push({type:"text",text:PROMPT});
 return fetch("https://api.anthropic.com/v1/messages",{method:"POST",
