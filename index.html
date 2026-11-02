@@ -79,7 +79,7 @@ body{background:#fff}main{padding:0;max-width:none}.ui,h1{display:none!important
 <h2>2. 集計表の数字を入れる</h2>
 <div id="ph" style="border:1px dashed var(--line);border-radius:6px;padding:10px;margin-bottom:12px">
 <div style="font-weight:600;margin-bottom:4px">写真から読み取る</div>
-<p class="hint">集計表の写真（上段・下段が両方写るように。分けて撮った場合は2枚選択）を選ぶと、Claudeが数字を読み取って下の欄に入れます。</p>
+<p class="hint">集計表の写真（上段・下段が両方写るように。分けて撮った場合は2枚選択）を選ぶと、AIが数字を読み取って下の欄に入れます。</p>
 <div class="row"><input id="pf" type="file" accept="image/*" multiple><button id="pg">写真を読み取る</button></div>
 <div id="pst" class="hint" role="status" style="margin-top:8px"></div>
 <details style="margin-top:8px" open><summary style="cursor:pointer;font-size:13px">読み取りの設定（初回のみ）</summary>
@@ -215,26 +215,33 @@ var PROMPT='添付画像は、電報配達の「集計表」を撮影した写�
 +'「電報配達通数」の「通数」行と「再配達（再掲）」行の数字を、日付の順に読み取ってください。次のJSONだけを返してください（説明文やコードブロックは不要）。\n'
 +'{"year":西暦年の整数またはnull,"month":月の整数またはnull,"tsu":[1日から末日までの通数の整数],"saihai":[1日から末日までの再配達の整数],"total_tsu":合計列の通数の整数またはnull,"total_saihai":合計列の再配達の整数またはnull,"note":"読み取りにくかった箇所があれば日本語で。なければ空文字"}\n'
 +'注意：日付の列と数字の位置を一つずつ正確に対応させること。通数と再配達を取り違えないこと。曜日や日付の数字を配列に入れないこと。読めない数字は推測せずnullにすること。配列の長さはその月の日数に合わせること。';
-function callApi(imgs){
-var key=$("ak").value.trim(),model=$("md").value.trim()||DEF[pv()],req;
+function callApi(imgs){var p=callApi0(imgs);return p.then(function(r){clearTimeout(window.__to);return r},function(e){clearTimeout(window.__to);throw e})}
+function callApi0(imgs){
+var key=$("ak").value.trim(),model=$("md").value.trim()||DEF[pv()],ctl=new AbortController(),sig=ctl.signal;
+window.__to=setTimeout(function(){ctl.abort()},120000);
 function fail(r,j){var e=new Error((j&&j.error&&j.error.message)||"error");e.status=r.status;throw e}
 function pick(txt){var m=(txt||"").match(/\{[\s\S]*\}/);if(!m)throw new Error("parse");return JSON.parse(m[0])}
 if(pv()==="gemini"){
 var parts=imgs.map(function(d){return {inline_data:{mime_type:"image/jpeg",data:d}}});parts.push({text:PROMPT});
-return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent",{method:"POST",
+function gem(think){
+var gc={temperature:0,responseMimeType:"application/json"};
+if(think&&/^gemini-3/.test(model))gc.thinkingConfig={thinkingLevel:"low"};
+return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent",{method:"POST",signal:sig,
 headers:{"content-type":"application/json","x-goog-api-key":key},
-body:JSON.stringify({contents:[{parts:parts}],generationConfig:{temperature:0,responseMimeType:"application/json"}})})
+body:JSON.stringify({contents:[{parts:parts}],generationConfig:gc})})
 .then(function(r){return r.json().then(function(j){if(!r.ok)fail(r,j);
 var c=j.candidates&&j.candidates[0];var t=c&&c.content&&c.content.parts?c.content.parts.map(function(p){return p.text||""}).join(""):"";return pick(t)})})}
+return gem(true).catch(function(e){if(e&&e.status===400&&/think/i.test(e.message))return gem(false);throw e})}
 var content=imgs.map(function(d){return {type:"image",source:{type:"base64",media_type:"image/jpeg",data:d}}});
 content.push({type:"text",text:PROMPT});
 return fetch("https://api.anthropic.com/v1/messages",{method:"POST",
-headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+signal:sig,headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
 body:JSON.stringify({model:model,max_tokens:2000,messages:[{role:"user",content:content}]})})
 .then(function(r){return r.json().then(function(j){if(!r.ok)fail(r,j);
 return pick((j.content||[]).filter(function(c){return c.type==="text"}).map(function(c){return c.text}).join(""))})})}
 function errMsg(e){
 var s=e&&e.status;
+if(e&&e.name==="AbortError")return "2分待っても返事がありませんでした。モデル名を gemini-2.5-flash などに変えるか、時間をおいてお試しください。";
 if(s===401||s===403||(s===400&&/API key/i.test(e.message)))return "APIキーが正しくありません。設定を確認してください。";
 if(s===429)return "無料枠の上限か、短時間に使いすぎです。しばらく待ってからお試しください。";
 if(s===404)return "モデル名が見つかりません。設定のモデル名を確認してください。";
@@ -247,7 +254,7 @@ if(!$("ak").value.trim()){st("先に「読み取りの設定」でAPIキーを�
 if(!fl.length){st("写真を選んでください。");return}
 var btn=$("pg");btn.disabled=true;st("写真を準備しています…");
 Promise.all(Array.prototype.slice.call(fl,0,4).map(shrink)).then(function(imgs){
-st("読み取り中です（30秒〜1分ほどかかります）…");return callApi(imgs)
+var t0=Date.now();clearInterval(window.__iv);window.__iv=setInterval(function(){st("読み取り中です… "+Math.round((Date.now()-t0)/1000)+"秒（最長2分）")},1000);return callApi(imgs)
 }).then(function(r){
 var nul=[];
 function arr(a){return (a||[]).map(function(v,i){if(v===null||v===undefined||isNaN(+v)){nul.push(i+1);return 0}return +v})}
@@ -256,11 +263,11 @@ if(r.year&&r.month){S.y=+r.year;S.m=+r.month}
 S.t=t.join(" ");S.s=v.join(" ");
 S.xt=r.total_tsu==null?"":String(r.total_tsu);S.xs=r.total_saihai==null?"":String(r.total_saihai);
 save();load();render();
-var msg="読み取りました。下の照合結果と、集計表の数字を見比べて確認してください。";
+clearInterval(window.__iv);var msg="読み取りました。下の照合結果と、集計表の数字を見比べて確認してください。";
 if(nul.length)msg+=" 読めなかった日は0にしています："+nul.filter(function(x,i,a){return a.indexOf(x)===i}).join("、")+"日。";
 if(r.note)msg+=" 補足："+r.note;
 st(msg)
-}).catch(function(e){st(errMsg(e))}).then(function(){btn.disabled=false})};
+}).catch(function(e){st(errMsg(e))}).then(function(){clearInterval(window.__iv);btn.disabled=false})};
 $("bd").onclick=function(){
 var b=$("bd"),el=$("sheet");
 if(!window.html2canvas||!window.jspdf){alert("PDF作成の部品を読み込めませんでした。通信を確認するか、「印刷」からPDF保存を使ってください。");return}
