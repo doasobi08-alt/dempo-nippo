@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>電報配達業務日報／月報 自動入力</title>
+<style>
+:root{--bg:#eceee9;--panel:#fbfbf8;--ink:#1c2321;--sub:#5b6560;--line:#c9cec8;--acc:#1f5a4a;--accfg:#fff;--bad:#a4261f;--ok:#1f6b3a;--field:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161a18;--panel:#1f2522;--ink:#e8ece9;--sub:#9aa5a0;--line:#39423e;--acc:#6fc2a8;--accfg:#0f1a16;--bad:#ff8d84;--ok:#7fd9a0;--field:#151a18}}
+:root[data-theme="dark"]{--bg:#161a18;--panel:#1f2522;--ink:#e8ece9;--sub:#9aa5a0;--line:#39423e;--acc:#6fc2a8;--accfg:#0f1a16;--bad:#ff8d84;--ok:#7fd9a0;--field:#151a18}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Hiragino Sans","Yu Gothic UI","Noto Sans JP","Noto Sans CJK JP",sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:18px;margin:4px 0 14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:14px}
+.panel h2{font-size:15px;margin:0 0 8px}
+.row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
+label{display:flex;flex-direction:column;font-size:12px;color:var(--sub);gap:3px}
+input,textarea,select{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:4px;padding:7px 8px;min-width:0}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+input[type=number]{width:88px}
+textarea{width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;resize:vertical}
+.hint{font-size:12px;color:var(--sub);margin:2px 0 8px}
+.cnt{font-size:12px;color:var(--sub);margin-top:2px}
+button{font:inherit;border:1px solid var(--acc);background:var(--acc);color:var(--accfg);border-radius:4px;padding:8px 14px;cursor:pointer}
+button.sec{background:transparent;color:var(--acc)}
+.msgs{margin:8px 0 0;padding:0;list-style:none;font-size:13px}
+.msgs li{padding:2px 0}.msgs .ok{color:var(--ok)}.msgs .ng{color:var(--bad)}
+.wrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px}
+.sheet{background:#fff;color:#000;min-width:760px;max-width:1000px;margin:0 auto;padding:14px 16px;font-family:"MS Gothic","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;font-size:12px}
+.sheet .t1{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.sheet .t1 b{font-size:18px}.sheet .t1 span{font-size:12px;font-weight:700}
+.sheet .l2,.sheet .l3{display:flex;align-items:center;gap:18px;margin:5px 0}
+.box{border:1px solid #000;display:inline-flex;align-items:center}
+.box i{font-style:normal;font-size:10px;line-height:1.2;padding:4px 8px;border-right:1px solid #000}.box s{text-decoration:none;padding:4px 16px}
+.big{font-size:16px;font-weight:700;margin-left:6px}
+.circ{display:inline-block;border:1.3px solid #000;border-radius:50%;padding:0 .55em;line-height:1.5}
+.nm{display:inline-block;min-width:15em;text-align:center;font-size:16px;font-weight:700;border-bottom:1px solid #000;margin-left:4px}
+.sp{flex:1}
+table.f{border-collapse:collapse;width:100%;table-layout:fixed;border:2px solid #000}
+.f th,.f td{border:1px solid #000;text-align:center;padding:0;font-weight:400}
+.f th{font-size:10.5px;line-height:1.25;padding:3px 1px}
+.f td{height:25px;font-size:13px}
+.f tr.k td{border-top:2px solid #000}
+.f td.dv{border-left:1px dashed #000}
+.f td.na{background:repeating-linear-gradient(135deg,#fff 0 4px,#ddd 4px 5px)}
+.f td.er{color:#b00;font-weight:700}
+.f tr.sum td{font-weight:700;border-top:2px solid #000}
+.f td.nt{height:90px;text-align:left;vertical-align:top;padding:4px 6px;white-space:pre-wrap;font-size:12px}
+.f td.nl{font-size:11px;line-height:1.3}
+.sheet .gr{border-left:2px solid #000}
+@media print{
+@page{size:A4 portrait;margin:9mm}
+body{background:#fff}main{padding:0;max-width:none}.ui,h1{display:none!important}
+.wrap{border:0;padding:0;overflow:visible;background:#fff}
+.sheet{min-width:0;max-width:none;width:100%;padding:0;font-size:9pt}
+.f td{height:5.6mm;font-size:9.5pt}.f td.nt{height:22mm}
+.f td.na{background:#fff}
+}
+</style>
+</head>
+<body>
+<main>
+<h1 class="ui">電報配達業務日報／月報 自動入力</h1>
+
+<section class="panel ui">
+<h2>1. 月と報告者</h2>
+<div class="row">
+<label>西暦年<input id="y" type="number" min="2019" max="2100"></label>
+<label>月<select id="m"></select></label>
+<label>報告日<input id="rd" type="date"></label>
+<label>報告者<input id="nm" type="text"></label>
+</div>
+</section>
+
+<section class="panel ui">
+<h2>2. 集計表の数字を入れる</h2>
+<div id="ph" style="border:1px dashed var(--line);border-radius:6px;padding:10px;margin-bottom:12px">
+<div style="font-weight:600;margin-bottom:4px">写真から読み取る</div>
+<p class="hint">集計表の写真（上段・下段が両方写るように。分けて撮った場合は2枚選択）を選ぶと、Claudeが数字を読み取って下の欄に入れます。</p>
+<div class="row"><input id="pf" type="file" accept="image/*" multiple><button id="pg">写真を読み取る</button></div>
+<div id="pst" class="hint" role="status" style="margin-top:8px"></div>
+<details style="margin-top:8px" open><summary style="cursor:pointer;font-size:13px">読み取りの設定（初回のみ）</summary>
+<div class="row" style="margin-top:8px">
+<label>使うAI<select id="pv"><option value="gemini">Google Gemini（無料枠あり）</option><option value="claude">Anthropic Claude（有料）</option></select></label>
+<label style="flex:1;min-width:220px"><span id="akl">APIキー</span><input id="ak" type="password" autocomplete="off"></label>
+<label>モデル名<input id="md" type="text" autocomplete="off" style="width:190px"></label>
+</div>
+<p class="hint" id="akh"></p>
+</details>
+</div>
+<p class="hint">集計表の「通数」の行を1日から順に、空白・改行・カンマ区切りで貼り付けます（全角数字も可）。再配達（再掲）の行も同じです。基本は「通数 − 再配達」で自動計算します。</p>
+<label>通数の行（1日〜末日）<textarea id="tt" rows="3" inputmode="numeric"></textarea></label>
+<div class="cnt" id="ct"></div>
+<label style="margin-top:8px">再配達（再掲）の行<textarea id="ss" rows="3" inputmode="numeric"></textarea></label>
+<div class="cnt" id="cs"></div>
+<div class="row" style="margin-top:10px">
+<label>集計表の合計：通数<input id="xt" type="number" inputmode="numeric" min="0"></label>
+<label>集計表の合計：再配達<input id="xs" type="number" inputmode="numeric" min="0"></label>
+</div>
+<ul class="msgs" id="msgs"></ul>
+</section>
+
+<section class="panel ui">
+<h2>3. 特記事項</h2>
+<textarea id="note" rows="2"></textarea>
+</section>
+
+<div class="wrap"><div class="sheet" id="sheet"></div></div>
+
+<section class="panel ui" style="margin-top:14px">
+<h2>出力</h2>
+<div class="row">
+<button id="bd">PDFを保存</button>
+<button id="bp" class="sec">印刷</button>
+<button id="bc" class="sec">基本・再配達をコピー</button>
+<button id="bx" class="sec">入力をクリア</button>
+</div>
+<p class="hint" style="margin-top:8px">コピーは、Excel様式の B6 セルに貼り付けると基本と再配達の2列が入ります。入力内容はこの端末のブラウザに自動保存されます。</p>
+<textarea id="tsv" rows="5" hidden readonly></textarea>
+</section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var KEY="dempo-nippo-v1";
+var DT=[3,3,11,2,1,1,0,2,0,1,2,0,25,9,0,1,2,0,0,0,1,3,0,0,3,4,1,0,19,5,7];
+var DS=[0,0,5,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,2,0,0,0,0,1,0,6,0,3];
+function pad(n){return (n<10?"0":"")+n}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+var S={y:2026,m:10,rd:today(),nm:"榑林",t:DT.join(" "),s:DS.join(" "),note:"",xt:"106",xs:"23"};
+try{var sv=localStorage.getItem(KEY);if(sv){var o=JSON.parse(sv);for(var k in o)S[k]=o[k]}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function parse(str){return String(str).normalize("NFKC").split(/[^\d]+/).filter(function(x){return x!==""}).map(Number)}
+function dim(){return new Date(S.y,S.m,0).getDate()}
+var sel=$("m");for(var i=1;i<=12;i++){var op=document.createElement("option");op.value=i;op.textContent=i+"月";sel.appendChild(op)}
+function load(){$("y").value=S.y;sel.value=S.m;$("rd").value=S.rd;$("nm").value=S.nm;$("tt").value=S.t;$("ss").value=S.s;$("note").value=S.note;$("xt").value=S.xt;$("xs").value=S.xs}
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function calc(){
+var n=dim(),T=parse(S.t),V=parse(S.s),rows=[],sb=0,ss=0,st=0,bad=[];
+for(var d=1;d<=31;d++){
+var r={d:d,na:d>n};
+if(!r.na&&d<=T.length){var t=T[d-1],s=d<=V.length?V[d-1]:0;r.t=t;r.s=s;r.b=t-s;
+if(s>t){r.er=true;bad.push(d)}sb+=r.b;ss+=s;st+=t}
+rows.push(r)}
+return {rows:rows,sb:sb,ss:ss,st:st,bad:bad,nT:T.length,nV:V.length,n:n}}
+function render(){
+var c=calc(),rd=(S.rd||"").split("-"),re=S.y-2018;
+var h='<div class="t1"><b>電報配達業務日報／月報（令和 '+re+' 年 '+S.m+' 月分）</b><span>送付先：メンバーズネット2002</span></div>';
+h+='<div class="l2"><span class="box"><i>府県<br>コード</i><s>東-3</s></span><span>府県名：<span class="big">静岡</span></span><span class="sp"></span><span>報告日　'+(rd[0]||"　　")+' 年 '+(rd[1]?+rd[1]:"　")+' 月 '+(rd[2]?+rd[2]:"　")+' 日</span></div>';
+h+='<div class="l3"><span>配達所名：<span class="big">御前崎</span></span><span>（<span class="circ">Pr</span>・FAX）</span><span class="sp"></span><span>報告者：<span class="nm">'+esc(S.nm)+'</span></span></div>';
+h+='<table class="f"><colgroup><col style="width:4.5%"><col style="width:6%"><col style="width:6%"><col style="width:6%">';
+for(var i=0;i<4;i++)h+='<col style="width:6.2%">';for(i=0;i<3;i++)h+='<col style="width:7.5%">';for(i=0;i<5;i++)h+='<col style="width:7.2%">';
+h+='</colgroup><thead><tr><th rowspan="2">日付</th><th colspan="3">配達通数内訳等<br>（配達取消は除く）</th><th rowspan="2" class="gr">台紙<br>回収<br>（回）</th><th rowspan="2">式紙<br>緊急<br>配送<br>（回）</th><th rowspan="2">夜間<br>呼出<br>（回）</th><th rowspan="2">区域外<br>（回）</th><th colspan="3" class="gr">立替金（円）</th><th colspan="5" class="gr">インセンティブ<br>（FAX配達所のみ記入）</th></tr>';
+h+='<tr><th>基本<br>（通）</th><th>再配達<br>（通）</th><th>合計</th><th class="gr">有料道路<br>通行料<br>（円）</th><th>郵便<br>宅配料<br>（円）</th><th>消耗品<br>その他<br>（円）</th><th class="gr">17時<br>以降<br>配達<br>（通数）</th><th>19時<br>以降<br>配達<br>（通数）</th><th>日・祝<br>配達<br>（通数）</th><th>重量物<br>①<br>（通数）</th><th>重量物<br>②<br>300円<br>（通数）</th></tr></thead><tbody>';
+function blank(k){var s="";for(var j=0;j<k;j++)s+="<td></td>";return s}
+c.rows.forEach(function(r){
+var k=(r.d>1&&(r.d-1)%5===0)?' class="k"':"";
+if(r.na){h+='<tr'+k+'><td>'+r.d+'</td><td class="na dv"></td><td class="na"></td><td class="na"></td>'+blank(12).replace(/<td>/g,'<td class="na">')+'</tr>';return}
+var has=r.t!==undefined;
+h+='<tr'+k+'><td>'+r.d+'</td><td class="dv'+(r.er?' er':'')+'">'+(has?(r.er?"!":r.b):"")+'</td><td>'+(has?r.s:"")+'</td><td>'+(has?r.t:"")+'</td>'+blank(12)+'</tr>'});
+h+='<tr class="sum"><td>計</td><td class="dv">'+c.sb+'</td><td>'+c.ss+'</td><td>'+c.st+'</td>'+blank(12)+'</tr>';
+h+='<tr><td class="nl">特記<br>事項</td><td colspan="15" class="nt">'+esc(S.note)+'</td></tr></tbody></table>';
+$("sheet").innerHTML=h;
+$("ct").textContent="読み取った日数："+c.nT+"日分（この月は"+c.n+"日）";
+$("cs").textContent="読み取った日数："+c.nV+"日分（空きは0として扱います）";
+var m=[];
+function add(ok,t){m.push('<li class="'+(ok?"ok":"ng")+'">'+(ok?"✓ ":"⚠ ")+t+"</li>")}
+add(c.nT===c.n,c.nT===c.n?"通数の日数が月の日数と一致しています":"通数が"+c.nT+"日分です（"+c.n+"日分が必要）");
+if(c.bad.length)add(false,"再配達が通数より多い日があります："+c.bad.join("、")+"日");
+if(S.xt!==""&&S.xt!=null)add(+S.xt===c.st,"通数の合計 "+c.st+(+S.xt===c.st?" ＝ 集計表 "+S.xt:" ≠ 集計表 "+S.xt));
+if(S.xs!==""&&S.xs!=null)add(+S.xs===c.ss,"再配達の合計 "+c.ss+(+S.xs===c.ss?" ＝ 集計表 "+S.xs:" ≠ 集計表 "+S.xs));
+$("msgs").innerHTML=m.join("");
+$("bx").textContent=S.m+"月分の入力をクリア";
+window.__c=c}
+function upd(k,v){S[k]=v;save();render()}
+$("y").oninput=function(){upd("y",+this.value||2026)};
+sel.onchange=function(){upd("m",+this.value)};
+$("rd").oninput=function(){upd("rd",this.value)};
+$("nm").oninput=function(){upd("nm",this.value)};
+$("tt").oninput=function(){upd("t",this.value)};
+$("ss").oninput=function(){upd("s",this.value)};
+$("note").oninput=function(){upd("note",this.value)};
+$("xt").oninput=function(){upd("xt",this.value)};
+$("xs").oninput=function(){upd("xs",this.value)};
+$("bp").onclick=function(){window.print()};
+$("bx").onclick=function(){S.t="";S.s="";S.xt="";S.xs="";S.note="";S.rd=today();save();load();render()};
+$("bc").onclick=function(){
+var tsv=window.__c.rows.map(function(r){return (r.t===undefined||r.na)?"\t":r.b+"\t"+r.s}).join("\n");
+var ta=$("tsv");ta.value=tsv;
+function manual(){ta.hidden=false;ta.select()}
+try{navigator.clipboard.writeText(tsv).then(function(){$("bc").textContent="コピーしました"},manual)}catch(e){manual()}};
+function st(t){$("pst").textContent=t}
+var DEF={gemini:"gemini-2.5-flash",claude:"claude-sonnet-5-5"};
+var HINT={gemini:"無料のキーは aistudio.google.com/apikey でGoogleアカウントにログインして作成できます（カード登録は不要）。無料枠では入力内容がGoogleの改善に使われることがあります。キーはこの端末のブラウザにだけ保存されます。",claude:"キーは console.anthropic.com で作成します（有料）。キーはこの端末のブラウザにだけ保存されます。"};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k)||"";localStorage.setItem(k,v)}catch(e){return ""}}
+function pv(){return $("pv").value}
+function showSet(){var p=pv();$("ak").value=ls("dempo-ak-"+p);$("md").value=ls("dempo-md-"+p)||DEF[p];$("akl").textContent=(p==="gemini"?"Gemini":"Anthropic")+" APIキー";$("akh").textContent=HINT[p]}
+$("pv").value=ls("dempo-pv")||"gemini";showSet();
+$("pv").onchange=function(){ls("dempo-pv",pv());showSet()};
+$("ak").oninput=function(){ls("dempo-ak-"+pv(),this.value.trim())};
+$("md").oninput=function(){ls("dempo-md-"+pv(),this.value.trim())};
+function shrink(file){
+return createImageBitmap(file).then(function(bm){
+var k=Math.min(1,2000/Math.max(bm.width,bm.height)),cv=document.createElement("canvas");
+cv.width=Math.round(bm.width*k);cv.height=Math.round(bm.height*k);
+cv.getContext("2d").drawImage(bm,0,0,cv.width,cv.height);
+return cv.toDataURL("image/jpeg",0.9).split(",")[1]})}
+var PROMPT='添付画像は、電報配達の「集計表」を撮影した写真です。表は上段（日付1〜15）と下段（日付16〜31と、右端の合計列）に分かれています。画像が複数枚ある場合は、同じ集計表の別の部分です。'
++'「電報配達通数」の「通数」行と「再配達（再掲）」行の数字を、日付の順に読み取ってください。次のJSONだけを返してください（説明文やコードブロックは不要）。\n'
++'{"year":西暦年の整数またはnull,"month":月の整数またはnull,"tsu":[1日から末日までの通数の整数],"saihai":[1日から末日までの再配達の整数],"total_tsu":合計列の通数の整数またはnull,"total_saihai":合計列の再配達の整数またはnull,"note":"読み取りにくかった箇所があれば日本語で。なければ空文字"}\n'
++'注意：日付の列と数字の位置を一つずつ正確に対応させること。通数と再配達を取り違えないこと。曜日や日付の数字を配列に入れないこと。読めない数字は推測せずnullにすること。配列の長さはその月の日数に合わせること。';
+function callApi(imgs){
+var key=$("ak").value.trim(),model=$("md").value.trim()||DEF[pv()],req;
+function fail(r,j){var e=new Error((j&&j.error&&j.error.message)||"error");e.status=r.status;throw e}
+function pick(txt){var m=(txt||"").match(/\{[\s\S]*\}/);if(!m)throw new Error("parse");return JSON.parse(m[0])}
+if(pv()==="gemini"){
+var parts=imgs.map(function(d){return {inline_data:{mime_type:"image/jpeg",data:d}}});parts.push({text:PROMPT});
+return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent",{method:"POST",
+headers:{"content-type":"application/json","x-goog-api-key":key},
+body:JSON.stringify({contents:[{parts:parts}],generationConfig:{temperature:0,responseMimeType:"application/json"}})})
+.then(function(r){return r.json().then(function(j){if(!r.ok)fail(r,j);
+var c=j.candidates&&j.candidates[0];var t=c&&c.content&&c.content.parts?c.content.parts.map(function(p){return p.text||""}).join(""):"";return pick(t)})})}
+var content=imgs.map(function(d){return {type:"image",source:{type:"base64",media_type:"image/jpeg",data:d}}});
+content.push({type:"text",text:PROMPT});
+return fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+body:JSON.stringify({model:model,max_tokens:2000,messages:[{role:"user",content:content}]})})
+.then(function(r){return r.json().then(function(j){if(!r.ok)fail(r,j);
+return pick((j.content||[]).filter(function(c){return c.type==="text"}).map(function(c){return c.text}).join(""))})})}
+function errMsg(e){
+var s=e&&e.status;
+if(s===401||s===403||(s===400&&/API key/i.test(e.message)))return "APIキーが正しくありません。設定を確認してください。";
+if(s===429)return "無料枠の上限か、短時間に使いすぎです。しばらく待ってからお試しください。";
+if(s===404)return "モデル名が見つかりません。設定のモデル名を確認してください。";
+if(s===400)return "写真または設定に問題があります："+e.message;
+if((e&&e.message==="parse")||e instanceof SyntaxError)return "うまく読み取れませんでした。写真を撮り直してお試しください。";
+return "通信できませんでした。電波とAPIキーを確認してください。"}
+$("pg").onclick=function(){
+var fl=$("pf").files;
+if(!$("ak").value.trim()){st("先に「読み取りの設定」でAPIキーを入力してください。");return}
+if(!fl.length){st("写真を選んでください。");return}
+var btn=$("pg");btn.disabled=true;st("写真を準備しています…");
+Promise.all(Array.prototype.slice.call(fl,0,4).map(shrink)).then(function(imgs){
+st("読み取り中です（30秒〜1分ほどかかります）…");return callApi(imgs)
+}).then(function(r){
+var nul=[];
+function arr(a){return (a||[]).map(function(v,i){if(v===null||v===undefined||isNaN(+v)){nul.push(i+1);return 0}return +v})}
+var t=arr(r.tsu),v=arr(r.saihai);
+if(r.year&&r.month){S.y=+r.year;S.m=+r.month}
+S.t=t.join(" ");S.s=v.join(" ");
+S.xt=r.total_tsu==null?"":String(r.total_tsu);S.xs=r.total_saihai==null?"":String(r.total_saihai);
+save();load();render();
+var msg="読み取りました。下の照合結果と、集計表の数字を見比べて確認してください。";
+if(nul.length)msg+=" 読めなかった日は0にしています："+nul.filter(function(x,i,a){return a.indexOf(x)===i}).join("、")+"日。";
+if(r.note)msg+=" 補足："+r.note;
+st(msg)
+}).catch(function(e){st(errMsg(e))}).then(function(){btn.disabled=false})};
+$("bd").onclick=function(){
+var b=$("bd"),el=$("sheet");
+if(!window.html2canvas||!window.jspdf){alert("PDF作成の部品を読み込めませんでした。通信を確認するか、「印刷」からPDF保存を使ってください。");return}
+b.disabled=true;b.textContent="作成中…";
+var old=el.style.cssText;el.style.width="900px";el.style.maxWidth="none";
+html2canvas(el,{scale:2,backgroundColor:"#ffffff"}).then(function(cv){
+el.style.cssText=old;
+var P=new window.jspdf.jsPDF({unit:"mm",format:"a4",orientation:"portrait"});
+var w=190,h=cv.height*w/cv.width;if(h>277){h=277;w=cv.width*h/cv.height}
+P.addImage(cv.toDataURL("image/jpeg",0.95),"JPEG",(210-w)/2,10,w,h);
+P.save("電報配達業務日報_"+S.y+"年"+S.m+"月_御前崎.pdf")
+}).catch(function(){el.style.cssText=old;alert("PDFを作れませんでした。「印刷」からPDF保存をお試しください。")}).then(function(){b.disabled=false;b.textContent="PDFを保存"})};
+load();render();
+})();
+</script>
+</body>
+</html>
